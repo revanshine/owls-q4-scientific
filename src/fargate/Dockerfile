@@ -9,8 +9,9 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 # Set working directory
 WORKDIR /app
 
-# Copy the project configuration
+# Copy the project configuration and lock file
 COPY pyproject.toml .
+COPY uv.lock .
 
 # Copy the scientific Q4 modules
 COPY q4/ ./q4/
