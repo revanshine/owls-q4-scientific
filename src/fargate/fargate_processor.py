@@ -58,6 +58,15 @@ def process_q4_scientific_fargate(input_key, run_prefix, processing_mode="standa
         X = df.to_numpy(dtype=float)
         print(f"✅ Loaded data shape: {X.shape}")
         
+        # Validate dataset size against container limits
+        MAX_VECTORS = 2000  # Conservative limit for 2GB container
+        if X.shape[0] > MAX_VECTORS:
+            raise ValueError(
+                f"Dataset too large: {X.shape[0]} vectors exceeds container limit of {MAX_VECTORS}. "
+                f"Use distributed processing for larger datasets."
+            )
+        print(f"✅ Dataset size validation passed: {X.shape[0]} vectors (limit: {MAX_VECTORS})")
+        
         # Step 1: Core Q4 Analysis (using scientific implementation)
         print("🧮 Performing Q4 analysis...")
         Ps, Pv = learn_projectors_linear(X, labels=None, r=1)

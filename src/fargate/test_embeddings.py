@@ -52,14 +52,28 @@ def main():
     print(f"   Projection shape: {Z.shape}")
     print(f"   Explained variance (top 5): {svd_model.explained_var[:5]}")
     
-    # Q_study Analysis
-    print("\n📈 Running Q_study Analysis...")
+    # Q_study Analysis with Visualizations
+    print("\n📈 Running Q_study Analysis with Visualizations...")
     qstudy_features = compute_qstudy_vectors(Z)
     
+    # Create output directory for visualizations
+    from pathlib import Path
+    plot_dir = Path("./test_output")
+    plot_dir.mkdir(exist_ok=True)
+    
+    # Generate visualizations (full processing mode)
+    from q4.qstudy_map import embed_reduce_heatmap
+    artifacts = embed_reduce_heatmap(qstudy_features, plot_dir, reducer="pca", bins=40)
+    
     print(f"✅ Q_study Results:")
-    print(f"   Mean absolute value: {float(qstudy_features['mean_absV']):.4f}")
-    print(f"   Energy: {float(qstudy_features['energy']):.4f}")
-    print(f"   Anisotropy (frac_tail_mean): {float(qstudy_features['frac_tail_mean']):.4f}")
+    print(f"   Mean absolute value: {float(qstudy_features['mean_absV'].iloc[0]):.4f}")
+    print(f"   Energy: {float(qstudy_features['energy'].iloc[0]):.4f}")
+    print(f"   Anisotropy (frac_tail_mean): {float(qstudy_features['frac_tail_mean'].iloc[0]):.4f}")
+    
+    print(f"\n🎨 Visualizations Generated:")
+    print(f"   📊 Scatter plot: {artifacts['scatter']}")
+    print(f"   🔥 Heatmap: {artifacts['heatmap']}")
+    print(f"   📄 Embedding CSV: {artifacts['embedding_csv']}")
     
     print("\n🎉 All scientific analyses completed successfully!")
     print("📊 This demonstrates:")
