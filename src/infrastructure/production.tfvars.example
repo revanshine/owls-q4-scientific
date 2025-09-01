@@ -1,0 +1,27 @@
+# Production Environment Configuration
+# Copy to production.tfvars and customize
+
+# Environment settings
+environment = "production"
+project_name = "owls-q4"
+
+# ECS Fargate Configuration
+fargate_cpu = 1024      # 1 vCPU
+fargate_memory = 2048   # 2 GB RAM
+
+# AWS Config (compliance monitoring)
+config_mode = "minimal"  # off|minimal|broad
+
+# Cost optimization
+log_retention_days = 7
+
+# Networking (update with your VPC details)
+# vpc_id = "vpc-xxxxxxxxx"
+# subnet_ids = ["subnet-xxxxxxxxx", "subnet-yyyyyyyyy"]
+
+# Tags
+tags = {
+  Environment = "production"
+  Project     = "owls-q4"
+  Owner       = "data-science-team"
+}

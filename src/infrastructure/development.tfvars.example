@@ -1,0 +1,23 @@
+# Development Environment Configuration
+# Copy to development.tfvars and customize
+
+# Environment settings
+environment = "development"
+project_name = "owls-q4-dev"
+
+# ECS Fargate Configuration (smaller for dev)
+fargate_cpu = 512       # 0.5 vCPU
+fargate_memory = 1024   # 1 GB RAM
+
+# AWS Config (disabled for cost savings)
+config_mode = "off"
+
+# Cost optimization
+log_retention_days = 3
+
+# Tags
+tags = {
+  Environment = "development"
+  Project     = "owls-q4-dev"
+  Owner       = "developer"
+}
