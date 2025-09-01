@@ -51,9 +51,8 @@ line-length = 88
 
 [dependency-groups]
 dev = [
-    "black>=25.1.0",
     "hypothesis>=6.138.13",
-    "mypy>=1.17.1",
+    "mypy>=1.17.1", 
     "pytest>=8.4.1",
     "pytest-cov>=6.2.1",
     "ruff>=0.12.10",
