@@ -52,7 +52,12 @@ output "done_queue_url" {
   description = "Completion notifications appear here"
 }
 
-output "lambda_function_name" {
-  value = aws_lambda_function.q4_processor.function_name
-  description = "Invoke this function - no new versions per run"
+output "ecs_cluster_name" {
+  value = aws_ecs_cluster.q4_cluster.name
+  description = "ECS cluster for Fargate tasks - no new clusters per run"
+}
+
+output "task_definition_arn" {
+  value = aws_ecs_task_definition.q4_scientific_processor.arn
+  description = "Task definition for scientific processing - no new definitions per run"
 }
