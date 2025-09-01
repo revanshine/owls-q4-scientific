@@ -1,0 +1,43 @@
+{
+  "dataset_info": {
+    "total_vectors": 500,
+    "dimensions": 64,
+    "data_size_mb": 0.244140625
+  },
+  "q4_analysis": {
+    "energy_split": 1.0000000000000002,
+    "energy_preservation": "perfect",
+    "q_keep_vectors": 500,
+    "q_discard_vectors": 500,
+    "q_study_rate": 1.0
+  },
+  "svd_analysis": {
+    "projection_dimensions": 50,
+    "compression_ratio": 1.28,
+    "top_variance_components": [
+      0.02757091869293262,
+      0.026719573832628424,
+      0.025491401534668955,
+      0.02537250175749916,
+      0.024760993692334896
+    ],
+    "cumulative_variance_top5": 0.12991538951006407,
+    "variance_concentration": "distributed"
+  },
+  "qstudy_analysis": {
+    "mean_magnitude": 0.834005297009487,
+    "total_energy": 55.444830684295624,
+    "anisotropy": 0.004,
+    "data_quality": "excellent"
+  },
+  "significant_findings": [
+    "PERFECT_ENERGY_PRESERVATION: Q4 decomposition preserved 100% of data energy",
+    "EXCELLENT_DATA_BALANCE: Very low anisotropy indicates well-distributed data",
+    "EFFECTIVE_COMPRESSION: 1.3x dimensionality reduction achieved"
+  ],
+  "visualization_files": {
+    "scatter_plot": "test_output/qstudy_scatter.png",
+    "heatmap": "test_output/qstudy_heatmap.png",
+    "embedding_csv": "test_output/qstudy_embedding.csv"
+  }
+}
