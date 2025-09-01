@@ -72,15 +72,95 @@ def main():
     
     artifacts = embed_reduce_heatmap(qstudy_df, plot_dir, reducer="pca", bins=40)
     
+    # Generate structured metrics for agent consumption
+    metrics = {
+        "dataset_info": {
+            "total_vectors": int(X.shape[0]),
+            "dimensions": int(X.shape[1]),
+            "data_size_mb": float(X.nbytes / 1024 / 1024)
+        },
+        "q4_analysis": {
+            "energy_split": float(energy_ratio),
+            "energy_preservation": "perfect" if energy_ratio >= 0.999 else "good" if energy_ratio >= 0.95 else "poor",
+            "q_keep_vectors": int(q_result.Q_keep.shape[0]),
+            "q_discard_vectors": int(q_result.Q_discard.shape[0]),
+            "q_study_rate": float(q_result.Q_study["rate"])
+        },
+        "svd_analysis": {
+            "projection_dimensions": int(Z.shape[1]),
+            "compression_ratio": float(X.shape[1] / Z.shape[1]),
+            "top_variance_components": svd_model.explained_var[:5].tolist(),
+            "cumulative_variance_top5": float(svd_model.explained_var[:5].sum()),
+            "variance_concentration": "high" if svd_model.explained_var[0] > 0.1 else "medium" if svd_model.explained_var[0] > 0.05 else "distributed"
+        },
+        "qstudy_analysis": {
+            "mean_magnitude": float(qstudy_features['mean_absV'].iloc[0]),
+            "total_energy": float(qstudy_features['energy'].iloc[0]),
+            "anisotropy": float(qstudy_features['frac_tail_mean'].iloc[0]),
+            "data_quality": "excellent" if qstudy_features['frac_tail_mean'].iloc[0] < 0.01 else "good" if qstudy_features['frac_tail_mean'].iloc[0] < 0.05 else "needs_attention"
+        },
+        "significant_findings": [],
+        "visualization_files": {
+            "scatter_plot": str(artifacts['scatter']),
+            "heatmap": str(artifacts['heatmap']),
+            "embedding_csv": str(artifacts['embedding_csv'])
+        }
+    }
+    
+    # Identify significant findings for agent attention
+    if metrics["q4_analysis"]["energy_split"] >= 0.999:
+        metrics["significant_findings"].append("PERFECT_ENERGY_PRESERVATION: Q4 decomposition preserved 100% of data energy")
+    
+    if metrics["qstudy_analysis"]["anisotropy"] < 0.01:
+        metrics["significant_findings"].append("EXCELLENT_DATA_BALANCE: Very low anisotropy indicates well-distributed data")
+    
+    if metrics["svd_analysis"]["top_variance_components"][0] > 0.05:
+        metrics["significant_findings"].append("STRONG_PRIMARY_COMPONENT: First SVD component captures significant variance")
+    
+    if metrics["svd_analysis"]["compression_ratio"] > 1.2:
+        metrics["significant_findings"].append(f"EFFECTIVE_COMPRESSION: {metrics['svd_analysis']['compression_ratio']:.1f}x dimensionality reduction achieved")
+    
+    # Write structured metrics for agent consumption
+    metrics_file = plot_dir / "qstudy_metrics.json"
+    with open(metrics_file, 'w') as f:
+        json.dump(metrics, f, indent=2)
+    
+    # Write human-readable summary
+    summary_file = plot_dir / "qstudy_summary.txt"
+    with open(summary_file, 'w') as f:
+        f.write("OWLS Q4 Scientific Analysis Summary\n")
+        f.write("=" * 40 + "\n\n")
+        f.write(f"Dataset: {metrics['dataset_info']['total_vectors']} vectors × {metrics['dataset_info']['dimensions']} dimensions\n")
+        f.write(f"Energy Preservation: {metrics['q4_analysis']['energy_preservation'].upper()} ({metrics['q4_analysis']['energy_split']:.4f})\n")
+        f.write(f"Data Quality: {metrics['qstudy_analysis']['data_quality'].upper()} (anisotropy: {metrics['qstudy_analysis']['anisotropy']:.4f})\n")
+        f.write(f"Compression: {metrics['svd_analysis']['compression_ratio']:.1f}x reduction\n\n")
+        
+        f.write("SIGNIFICANT FINDINGS:\n")
+        for finding in metrics['significant_findings']:
+            f.write(f"• {finding}\n")
+        
+        f.write(f"\nVISUALIZATIONS:\n")
+        f.write(f"• Scatter Plot: {artifacts['scatter']}\n")
+        f.write(f"• Heatmap: {artifacts['heatmap']}\n")
+        f.write(f"• Data Export: {artifacts['embedding_csv']}\n")
+    
     print(f"✅ Q_study Results:")
-    print(f"   Mean absolute value: {float(qstudy_features['mean_absV'].iloc[0]):.4f}")
-    print(f"   Energy: {float(qstudy_features['energy'].iloc[0]):.4f}")
-    print(f"   Anisotropy (frac_tail_mean): {float(qstudy_features['frac_tail_mean'].iloc[0]):.4f}")
+    print(f"   Mean absolute value: {metrics['qstudy_analysis']['mean_magnitude']:.4f}")
+    print(f"   Energy: {metrics['qstudy_analysis']['total_energy']:.4f}")
+    print(f"   Anisotropy (frac_tail_mean): {metrics['qstudy_analysis']['anisotropy']:.4f}")
     
     print(f"\n🎨 Visualizations Generated:")
     print(f"   📊 Scatter plot: {artifacts['scatter']}")
     print(f"   🔥 Heatmap: {artifacts['heatmap']}")
     print(f"   📄 Embedding CSV: {artifacts['embedding_csv']}")
+    
+    print(f"\n🤖 Agent Metrics:")
+    print(f"   📋 Structured metrics: {metrics_file}")
+    print(f"   📝 Human summary: {summary_file}")
+    
+    print(f"\n🔍 Significant Findings:")
+    for finding in metrics['significant_findings']:
+        print(f"   • {finding}")
     
     print("\n🎉 All scientific analyses completed successfully!")
     print("📊 This demonstrates:")
