@@ -131,6 +131,28 @@ All our results, code, and visualizations are **completely open source**. You ca
 - **Extend our analysis** with new techniques
 - **Learn from our implementation** for educational purposes
 
+### 🔄 How to Reproduce This README
+
+Want to generate these exact results yourself? Here's how:
+
+```bash
+# One-liner reproduction
+make reproduce
+
+# Or step by step:
+make setup    # Install dependencies
+make run      # Generate analysis
+make plots    # Create visualizations
+```
+
+**Expected outputs:**
+- Energy Split: **1.0000** (perfect preservation)
+- SVD Compression: **64→50** dimensions (1.3x reduction)  
+- Anisotropy: **0.0040** (excellent balance)
+- Files: `images/qstudy_scatter.png`, `images/qstudy_heatmap.png`
+
+All results use **fixed random seeds** for perfect reproducibility.
+
 ## 🛠️ Technical Implementation
 
 *For developers, researchers, and technical users who want to run this analysis themselves or understand the implementation details, see our [Technical Details Guide](TECHNICAL_DETAILS.md).*
