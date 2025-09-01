@@ -9,59 +9,78 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Set up Python
+      id: setup-python
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
-        
-    - name: Install uv
-      uses: astral-sh/setup-uv@v3
-      
-    - name: Cache dependencies
-      uses: actions/cache@v4
+
+    # Use uv with built-in caching for its download cache
+    - name: Install uv (with caching)
+      uses: astral-sh/setup-uv@v6
       with:
-        path: ~/.cache/uv
-        key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
+        enable-cache: true
+
+    # Restore the ready-to-use venv to skip uv sync when possible
+    - name: Restore venv cache
+      id: venv-restore
+      uses: actions/cache/restore@v4
+      with:
+        path: src/fargate/.venv
+        key: venv-${{ runner.os }}-py${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('src/fargate/uv.lock') }}
         restore-keys: |
-          ${{ runner.os }}-uv-
-          
-    - name: Install dependencies
-      run: |
-        cd src/fargate
-        uv sync --dev
-        
+          venv-${{ runner.os }}-py${{ steps.setup-python.outputs.python-version }}-
+
+    # Only build the venv when it wasn't restored
+    - name: Install dependencies (uv sync)
+      if: steps.venv-restore.outputs.cache-hit != 'true'
+      working-directory: src/fargate
+      run: uv sync --locked --all-extras --dev
+
+    # Save the freshly built venv (only when we had to build it)
+    - name: Save venv cache
+      if: steps.venv-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: src/fargate/.venv
+        key: venv-${{ runner.os }}-py${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('src/fargate/uv.lock') }}
+
     - name: Run code quality checks
+      working-directory: src/fargate
       run: |
-        cd src/fargate
         echo "🔍 Running ruff linter and formatter..."
         uv run ruff check . --fix
         uv run ruff format .
-        
+
     - name: Run mathematical property tests
+      working-directory: src/fargate
       run: |
-        cd src/fargate
         echo "🧪 Running comprehensive test suite..."
         uv run python -m pytest tests/ -v --cov=q4 --cov-report=xml --cov-report=term
-        
+
     - name: Upload coverage reports
       uses: codecov/codecov-action@v4
       with:
         file: ./src/fargate/coverage.xml
         flags: unittests
         name: codecov-umbrella
-        
+
+    - name: Prepare test output dir
+      if: always()
+      run: mkdir -p src/fargate/test_output
+
     - name: Generate test artifacts
       if: always()
+      working-directory: src/fargate
       run: |
-        cd src/fargate
         echo "📊 Generating test visualizations..."
         uv run python test_embeddings.py || true
-        
+
     - name: Upload test artifacts
       if: always()
       uses: actions/upload-artifact@v4
@@ -71,36 +90,37 @@ jobs:
           src/fargate/test_output/*.png
           src/fargate/test_output/*.json
           src/fargate/test_output/*.txt
+        if-no-files-found: ignore
         retention-days: 30
-        
+
     - name: Validate mathematical guarantees
+      working-directory: src/fargate
       run: |
-        cd src/fargate
         echo "🔬 Validating mathematical properties..."
-        uv run python -c "
-        import sys
-        sys.path.insert(0, '.')
-        
-        # Quick validation of core mathematical properties
-        import numpy as np
-        from q4.operator import learn_projectors_linear, energy_split
-        
-        print('✅ Testing mathematical guarantees...')
-        np.random.seed(42)
-        X = np.random.randn(50, 10)
-        Ps, Pv = learn_projectors_linear(X)
-        
-        # Validate core properties
-        assert np.allclose(Ps @ Ps, Ps, atol=1e-8), 'Idempotence failed'
-        assert np.allclose(Ps @ Pv, np.zeros_like(Ps), atol=1e-8), 'Orthogonality failed'
-        assert np.allclose(Ps + Pv, np.eye(10), atol=1e-8), 'Completeness failed'
-        
-        energy = energy_split(X, Ps, Pv)
-        assert 0.99 <= energy <= 1.01, f'Energy preservation failed: {energy}'
-        
-        print('✅ All mathematical guarantees validated!')
-        "
-        
+        uv run python - <<'PY'
+import numpy as np
+from q4.operator import learn_projectors_linear, energy_split
+
+def main():
+    np.random.seed(42)
+    X = np.random.randn(50, 10)
+    Ps, Pv = learn_projectors_linear(X)
+
+    # Core properties
+    assert np.allclose(Ps @ Ps, Ps, atol=1e-8), 'Idempotence failed'
+    assert np.allclose(Ps @ Pv, np.zeros_like(Ps), atol=1e-8), 'Orthogonality failed'
+    assert np.allclose(Ps + Pv, np.eye(10), atol=1e-8), 'Completeness failed'
+
+    energy = energy_split(X, Ps, Pv)
+    assert 0.99 <= energy <= 1.01, f'Energy preservation failed: {energy}'
+
+    print('✅ All mathematical guarantees validated!')
+
+if __name__ == '__main__':
+    main()
+PY
+
+
     - name: Check reproducibility
       run: |
         echo "🔄 Testing reproducibility..."
