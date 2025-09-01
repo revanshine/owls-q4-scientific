@@ -51,8 +51,3 @@ output "done_queue_url" {
   value = aws_sqs_queue.q4_done_queue.url
   description = "Completion notifications appear here"
 }
-
-output "fargate_log_group" {
-  value = aws_cloudwatch_log_group.q4_fargate_logs.name
-  description = "CloudWatch log group for Fargate tasks"
-}
