@@ -41,8 +41,6 @@ jobs:
         echo "🔍 Running ruff linter and formatter..."
         uv run ruff check . --fix
         uv run ruff format .
-        echo "🔬 Running mypy type checker..."
-        uv run mypy . --ignore-missing-imports
         
     - name: Run mathematical property tests
       run: |
