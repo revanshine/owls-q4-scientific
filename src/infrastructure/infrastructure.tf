@@ -24,87 +24,12 @@ resource "aws_sqs_queue" "q4_done_queue" {
 }
 
 # IAM Role for Lambda (create once, never modify)
-resource "aws_iam_role" "q4_lambda_role" {
-  name = "owls-q4-lambda-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "lambda.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
 
 # IAM Policy (create once, broad permissions for data-plane operations)
-resource "aws_iam_role_policy" "q4_lambda_policy" {
-  name = "owls-q4-lambda-policy"
-  role = aws_iam_role.q4_lambda_role.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:ListBucket"
-        ]
-        Resource = [
-          "${aws_s3_bucket.q4_archive.arn}",
-          "${aws_s3_bucket.q4_archive.arn}/*",
-          "${aws_s3_bucket.q4_artifacts.arn}",
-          "${aws_s3_bucket.q4_artifacts.arn}/*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "sqs:ReceiveMessage",
-          "sqs:DeleteMessage",
-          "sqs:SendMessage",
-          "sqs:GetQueueAttributes"
-        ]
-        Resource = [
-          aws_sqs_queue.q4_work_queue.arn,
-          aws_sqs_queue.q4_done_queue.arn
-        ]
-      }
-    ]
-  })
-}
 
 # Single Lambda function (create once, reuse for all processing)
-resource "aws_lambda_function" "q4_processor" {
-  filename         = "q4_processor.zip"
-  function_name    = "owls-q4-processor"
-  role            = aws_iam_role.q4_lambda_role.arn
-  handler         = "lambda_function.lambda_handler"
-  runtime         = "python3.10"
-  timeout         = 900
-
-  environment {
-    variables = {
-      ARCHIVE_BUCKET   = aws_s3_bucket.q4_archive.bucket
-      ARTIFACTS_BUCKET = aws_s3_bucket.q4_artifacts.bucket
-      WORK_QUEUE_URL   = aws_sqs_queue.q4_work_queue.url
-      DONE_QUEUE_URL   = aws_sqs_queue.q4_done_queue.url
-    }
-  }
-}
 
 # SQS Event Source Mapping (create once)
-resource "aws_lambda_event_source_mapping" "q4_sqs_trigger" {
-  event_source_arn = aws_sqs_queue.q4_work_queue.arn
-  function_name    = aws_lambda_function.q4_processor.arn
-  batch_size       = 1
-}
 
 # Outputs for runtime data-plane operations
 output "archive_bucket" {

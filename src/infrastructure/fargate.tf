@@ -170,110 +170,12 @@ resource "aws_iam_role_policy" "ecs_task_policy" {
   })
 }
 
-# Enhanced Lambda function for task orchestration
-resource "aws_lambda_function" "q4_orchestrator" {
-  filename         = "q4_orchestrator.zip"
-  function_name    = "owls-q4-orchestrator"
-  role            = aws_iam_role.q4_orchestrator_role.arn
-  handler         = "orchestrator.lambda_handler"
-  runtime         = "python3.12"
-  timeout         = 60  # Just for orchestration, not processing
-
-  environment {
-    variables = {
-      CLUSTER_NAME           = aws_ecs_cluster.q4_cluster.name
-      TASK_DEFINITION_ARN    = aws_ecs_task_definition.q4_scientific_processor.arn
-      SUBNET_IDS            = "subnet-12345"  # Will be configured for actual deployment
-      SECURITY_GROUP_IDS    = "sg-12345"     # Will be configured for actual deployment
-    }
-  }
-
-  tags = {
-    Project     = var.project_name
-    Environment = var.environment
-  }
-}
 
 # IAM Role for Lambda orchestrator
-resource "aws_iam_role" "q4_orchestrator_role" {
-  name = "owls-q4-orchestrator-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "lambda.amazonaws.com"
-        }
-      }
-    ]
-  })
-
-  tags = {
-    Project     = var.project_name
-    Environment = var.environment
-  }
-}
 
 # IAM Policy for Lambda orchestrator
-resource "aws_iam_role_policy" "q4_orchestrator_policy" {
-  name = "owls-q4-orchestrator-policy"
-  role = aws_iam_role.q4_orchestrator_role.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents"
-        ]
-        Resource = "arn:aws:logs:*:*:*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "sqs:ReceiveMessage",
-          "sqs:DeleteMessage",
-          "sqs:GetQueueAttributes"
-        ]
-        Resource = [
-          aws_sqs_queue.q4_work_queue.arn
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "ecs:RunTask"
-        ]
-        Resource = [
-          aws_ecs_task_definition.q4_scientific_processor.arn
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "iam:PassRole"
-        ]
-        Resource = [
-          aws_iam_role.ecs_execution_role.arn,
-          aws_iam_role.ecs_task_role.arn
-        ]
-      }
-    ]
-  })
-}
 
 # SQS trigger for orchestrator Lambda (same as before)
-resource "aws_lambda_event_source_mapping" "q4_orchestrator_trigger" {
-  event_source_arn = aws_sqs_queue.q4_work_queue.arn
-  function_name    = aws_lambda_function.q4_orchestrator.arn
-  batch_size       = 1
-}
 
 # Outputs for Fargate deployment
 output "ecs_cluster_name" {

@@ -1,0 +1,17 @@
+services:
+  localstack:
+    container_name: owls-q4-localstack
+    image: localstack/localstack:3.0
+    ports:
+      - "4567:4566"
+    environment:
+      - SERVICES=s3,lambda,sqs,iam,ecs,logs
+      - DEBUG=1
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
