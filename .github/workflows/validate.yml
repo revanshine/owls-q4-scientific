@@ -98,7 +98,7 @@ jobs:
       shell: bash
       run: |
         set -euo pipefail
-        uv run python ../.github/scripts/validate_props.py
+        uv run python "$GITHUB_WORKSPACE/.github/scripts/validate_props.py"
 
     - name: Check reproducibility
       run: |
