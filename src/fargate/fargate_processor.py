@@ -85,7 +85,7 @@ def process_q4_scientific_fargate(input_key, run_prefix, processing_mode="standa
             # Use scientific SVD operations with full capabilities
             Vn, mu = center_l2(X)
             k = min(50, X.shape[1], X.shape[0])
-            svd_model = fit_svd(Vn, k=k, seed=42)
+            svd_model = fit_svd(Vn, k=k, seed=42, method="auto")  # Use optimized auto-selection
             svd_model.mu = mu
             
             Z = project(X, svd_model)

@@ -44,7 +44,7 @@ def main():
     print("\n🔍 Running SVD Analysis...")
     Vn, mu = center_l2(X)
     k = min(50, X.shape[1], X.shape[0])
-    svd_model = fit_svd(Vn, k=k, seed=42)
+    svd_model = fit_svd(Vn, k=k, seed=42, method="auto")  # Use optimized auto-selection
     svd_model.mu = mu
     Z = project(X, svd_model)
     
@@ -63,7 +63,14 @@ def main():
     
     # Generate visualizations (full processing mode)
     from q4.qstudy_map import embed_reduce_heatmap
-    artifacts = embed_reduce_heatmap(qstudy_features, plot_dir, reducer="pca", bins=40)
+    
+    # Create proper DataFrame for visualization using SVD projection data
+    # Use the SVD projection Z for visualization (500 vectors, 50 dimensions)
+    qstudy_df = pd.DataFrame(Z)
+    # Add the anisotropy metric for coloring (same value for all points from our analysis)
+    qstudy_df['frac_tail_mean'] = float(qstudy_features['frac_tail_mean'].iloc[0])
+    
+    artifacts = embed_reduce_heatmap(qstudy_df, plot_dir, reducer="pca", bins=40)
     
     print(f"✅ Q_study Results:")
     print(f"   Mean absolute value: {float(qstudy_features['mean_absV'].iloc[0]):.4f}")
